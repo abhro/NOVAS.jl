@@ -19,8 +19,12 @@ end
 
 # Don't read past the lcfmt, the ftpstring kills the reader as it has nonascii
 function FileRecord(f::FortranFile)
-    return FileRecord(read(f, FString{8}, Int32, Int32, FString{60}, Int32, Int32, Int32,
-                           FString{8}; rec=1)...)
+    return FileRecord(
+        read(
+            f, FString{8}, Int32, Int32, FString{60}, Int32, Int32, Int32,
+            FString{8}; rec = 1
+        )...
+    )
 end
 
 struct Summary
@@ -30,7 +34,7 @@ end
 
 function summaries(f::FortranFile, fr::FileRecord, nsum::Int, record::Int)
     types = Base.Iterators.flatten([((Float64, fr.nd), (Int32, fr.ni)) for _ in 1:nsum])
-    s = read(f, Float64, Float64, Float64, types...; rec=record)[4:end]
+    s = read(f, Float64, Float64, Float64, types...; rec = record)[4:end]
     return [Summary(s[i], s[i + 1]) for i in 1:2:(2nsum)]
 end
 
@@ -62,12 +66,12 @@ Reads an NAIF Double Precision Array Files (DAF) into a Julia `DAFFile`
 """
 function read_daf(filename)
     # Figure out endianness
-    f = FortranFile(filename; convert="little-endian", access="direct", recl=RECORD_LENGTH)
+    f = FortranFile(filename; convert = "little-endian", access = "direct", recl = RECORD_LENGTH)
     # Read header
     fr = FileRecord(f)
     if fr.locfmt == "BIG-IEEE"
         @info "DAF File is Big Endian"
-        f = FortranFile(filename; convert="big-endian", access="direct", recl=RECORD_LENGTH)
+        f = FortranFile(filename; convert = "big-endian", access = "direct", recl = RECORD_LENGTH)
         fr = FileRecord(f)
     end
     # Collect all summaries and names
@@ -75,7 +79,7 @@ function read_daf(filename)
     sum_ptr = fr.fward
     while true
         # Read header
-        next, prev, nsum = read(f, Float64, Float64, Float64; rec=sum_ptr)
+        next, prev, nsum = read(f, Float64, Float64, Float64; rec = sum_ptr)
         append!(summs, summaries(f, fr, Int(nsum), sum_ptr))
         # Move the ptr
         if iszero(next)
@@ -92,7 +96,7 @@ function read_daf(filename)
         record_range = which_record(start_idx):which_record(end_idx)
         vect = Float64[]
         for record in record_range
-            rec = read(f, (Float64, 128); rec=record)
+            rec = read(f, (Float64, 128); rec = record)
             a, b = 1, 128
             if record == record_range[1]
                 a = ((start_idx - 1) % 128) + 1
@@ -105,7 +109,9 @@ function read_daf(filename)
         push!(data, vect)
     end
     # Construct our thing
-    daf_arrays = [DAFArray(summs[i].doubles, summs[i].ints[1:(end - 2)], data[i])
-                  for i in 1:length(summs)]
+    daf_arrays = [
+        DAFArray(summs[i].doubles, summs[i].ints[1:(end - 2)], data[i])
+            for i in 1:length(summs)
+    ]
     return DAFFile(fr.locifn, fr.locidw, daf_arrays)
 end

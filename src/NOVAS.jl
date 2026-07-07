@@ -1,7 +1,7 @@
 module NOVAS
 
 using DataDeps, LinearAlgebra, Memoize, StaticArrays, DelimitedFiles, FortranFiles,
-      Polynomials
+    Polynomials
 import Base.show
 
 include("data.jl")

@@ -78,7 +78,7 @@ function convert(::Type{SPKChebyshev}, data::Vector{Float64})
         push!(records, ChebyshevRecord(mid, radius, x, y, z, ẋ, ẏ, ż))
     end
     # Sort
-    sort!(records; by=x -> x.midpoint)
+    sort!(records; by = x -> x.midpoint)
     return SPKChebyshev(records, init, intlen, rsize, n)
 end
 
@@ -114,7 +114,7 @@ end
 
 # There are more types, do we need them?
 const SPK_TYPES = Dict(1 => SPKMDA, 2 => SPKChebyshev)
-const SPK_REGISTRY = Dict{NTuple{3,Int},AbstractSPKType}()
+const SPK_REGISTRY = Dict{NTuple{3, Int}, AbstractSPKType}()
 
 """
     register_spk!(daf)
@@ -135,6 +135,7 @@ function register_spk!(daf::DAFFile)
         callable = convert(type, segment.data)
         SPK_REGISTRY[(target, center, reference)] = callable
     end
+    return
 end
 
 function register_spk!(filename::String)
@@ -154,7 +155,7 @@ Evaluates the state vectors (position and velocity) at a given time for a target
 # Optional Arguments
 - `reference::Int`: NAIF code for reference system
 """
-function state(time::Real, target::Int, center::Int, reference::Int=1)
+function state(time::Real, target::Int, center::Int, reference::Int = 1)
     # Check to see if a record is registered with this combination
     key = (target, center, reference)
     @assert key ∈ keys(SPK_REGISTRY) "No SPK entry found for this target/center/reference combination"
@@ -162,7 +163,9 @@ function state(time::Real, target::Int, center::Int, reference::Int=1)
     return state(SPK_REGISTRY[key], time)
 end
 
-function state(time::Real, target::String, center::String, reference::String="J2000")
-    return state(time, naif_body_codes[target], naif_body_codes[center],
-                 naif_reference_codes[reference])
+function state(time::Real, target::String, center::String, reference::String = "J2000")
+    return state(
+        time, naif_body_codes[target], naif_body_codes[center],
+        naif_reference_codes[reference]
+    )
 end

@@ -248,6 +248,8 @@ import Base.convert
 
 function Base.convert(::Type{NOVAS.LibNOVAS.on_surface}, obj::OnSurface{Float64})
     # There's gotta be a better way to do this
-    return NOVAS.LibNOVAS.on_surface(obj.latitude, obj.longitude, obj.height,
-                                     obj.temperature, obj.pressure)
+    return NOVAS.LibNOVAS.on_surface(
+        obj.latitude, obj.longitude, obj.height,
+        obj.temperature, obj.pressure
+    )
 end

@@ -1,7 +1,7 @@
 export nutation_angles, mean_obliq, frame_tie, nutation, precession, cel_pole, e_tilt,
-       ira_equinox, cio_location, cio_basis, era, tdb2tt, sidereal_time, wobble, spin,
-       ter2cel, OnSurface, refract, equ2hor, CatEntry, Object, SkyPos, Observer, app_star,
-       InSpace, place
+    ira_equinox, cio_location, cio_basis, era, tdb2tt, sidereal_time, wobble, spin,
+    ter2cel, OnSurface, refract, equ2hor, CatEntry, Object, SkyPos, Observer, app_star,
+    InSpace, place
 
 """
     nutation_angles(t)
@@ -19,7 +19,7 @@ Computes the values for nutation in longitude and nutation in obliquity for a gi
 - `dpsi`: Nutation in longitude in arcseconds
 - `deps`: Nutation in obliquity in arcseconds
 """
-function nutation_angles(t::Real; accuracy::Symbol=:full)
+function nutation_angles(t::Real; accuracy::Symbol = :full)
     @assert accuracy ∈ Set([:full, :reduced])
     t1 = t * 36525.0
     # High accuracy mode uses IAU 200A
@@ -44,8 +44,10 @@ Computes the mean obliquity of the ecliptic
 function mean_obliq(jd_tdb::Real)
     # Julian centuries since J2000.0 epoch
     t = (jd_tdb - T0) / 36525.0
-    ε = ((((-0.0000000434 * t - 0.000000576) * t + 0.00200340) * t - 0.0001831) * t -
-         46.836769) * t + 84381.406
+    ε = (
+        (((-0.0000000434 * t - 0.000000576) * t + 0.0020034) * t - 0.0001831) * t -
+            46.836769
+    ) * t + 84381.406
     return ε
 end
 
@@ -70,29 +72,34 @@ end
 """
     nutation(jd_tdb,pos)
 
-Nutates equitorial rectangular coordinates from mean equator and equinox of epoch to true equator or
-does the transformation in reverse given the flag `direction`.
+Nutates equitorial rectangular coordinates from mean equator and equinox of epoch
+to true equator or does the transformation in reverse given the flag `direction`.
 
 # Arguments
 - `jd_tdb::Real`: TDB Julian Date
-- `pos::AbstractVector`: Position vector, geocentric equatorial rectangular coordinates, referred to mean equator and equinox of epoch
+- `pos::AbstractVector`: Position vector, geocentric equatorial rectangular coordinates,
+  referred to mean equator and equinox of epoch
 
 # Optional Arguments
 - `accuracy::Symbol=:full`: Either `:full` or `:reduced` accuracy
 - `direction::Symbol=:mean2true`: Perform the transformation in either the `:mean2true` or `:true2mean` direction
 """
-function nutation(jd_tdb::Real, pos::AbstractVector; accuracy::Symbol=:full,
-                  direction::Symbol=:mean2true)
+function nutation(
+        jd_tdb::Real, pos::AbstractVector; accuracy::Symbol = :full,
+        direction::Symbol = :mean2true
+    )
     @assert direction ∈ Set([:mean2true, :true2mean])
     # Call e_tilt to get the obliquity and nutation angles
-    oblm, oblt, _, psi, _ = e_tilt(jd_tdb; accuracy=accuracy)
+    oblm, oblt, _, psi, _ = e_tilt(jd_tdb; accuracy)
     # Construct rotation matrix
     sobm, cobm = sincosd(oblm)
     sobt, cobt = sincosd(oblt)
     spsi, cpsi = sincos(psi * ASEC2RAD)
-    rot = @SMatrix [cpsi -spsi*cobm -spsi*sobm
-                    spsi*cobt cpsi * cobm * cobt+sobm * sobt cpsi * sobm * cobt-cobm * sobt
-                    spsi*sobt cpsi * cobm * sobt-sobm * cobt cpsi * sobm * sobt+cobm * cobt]
+    rot = @SMatrix [
+        cpsi -spsi * cobm -spsi * sobm
+        spsi * cobt cpsi * cobm * cobt + sobm * sobt cpsi * sobm * cobt - cobm * sobt
+        spsi * sobt cpsi * cobm * sobt - sobm * cobt cpsi * sobm * sobt + cobm * cobt
+    ]
     # Transform Position
     if direction == :mean2true
         return rot * pos
@@ -120,12 +127,18 @@ Precesses equatorial rectangular coordinates from one epoch to another. One of t
         t *= -1
     end
 
-    psia = ((((-0.0000000951 * t + 0.000132851) * t - 0.00114045) * t - 1.0790069) * t +
-            5038.481507) * t
-    omegaa = ((((+0.0000003337 * t - 0.000000467) * t - 0.00772503) * t + 0.0512623) * t -
-              0.025754) * t + eps0
-    chia = ((((-0.0000000560 * t + 0.000170663) * t - 0.00121197) * t - 2.3814292) * t +
-            10.556403) * t
+    psia = (
+        (((-0.0000000951 * t + 0.000132851) * t - 0.00114045) * t - 1.0790069) * t +
+            5038.481507
+    ) * t
+    omegaa = (
+        (((+0.0000003337 * t - 0.000000467) * t - 0.00772503) * t + 0.0512623) * t -
+            0.025754
+    ) * t + eps0
+    chia = (
+        (((-0.000000056 * t + 0.000170663) * t - 0.00121197) * t - 2.3814292) * t +
+            10.556403
+    ) * t
 
     eps0 = eps0 * ASEC2RAD
     psia = psia * ASEC2RAD
@@ -138,9 +151,11 @@ Precesses equatorial rectangular coordinates from one epoch to another. One of t
     sd, cd = sincos(chia)
 
     # Construct precession rotation matrix
-    rot = @SMatrix [cd * cb-sb * sd * cc cd * sb * ca + sd * cc * cb * ca-sa * sd * sc cd*sb*sa+sd*cc*cb*sa+ca*sd*sc
-                    -sd * cb-sb * cd * cc -sd * sb * ca + cd * cc * cb * ca-sa * cd * sc -sd*sb*sa+cd*cc*cb*sa+ca*cd*sc
-                    sb*sc -sc * cb * ca-sa * cc -sc * cb * sa+cc * ca]
+    rot = @SMatrix [
+        cd * cb - sb * sd * cc cd * sb * ca + sd * cc * cb * ca - sa * sd * sc cd * sb * sa + sd * cc * cb * sa + ca * sd * sc
+        -sd * cb - sb * cd * cc -sd * sb * ca + cd * cc * cb * ca - sa * cd * sc -sd * sb * sa + cd * cc * cb * sa + ca * cd * sc
+        sb * sc -sc * cb * ca - sa * cc -sc * cb * sa + cc * ca
+    ]
 
     # Perform rotation from epoch to J2000.0
     if jd_tdb2 == T0
@@ -161,8 +176,8 @@ This function differs from the C version, where this returns the corrections ins
 
 # Arguments
 - `tjd::Real`: TDB or TT Julian date for pole offsets
-- `type::Symbol=:angular`: Type of pole offset. `:angular` for corrections to angular 
-    coordinates of modeled pole referred to mean ecliptic of date, that is, 
+- `type::Symbol=:angular`: Type of pole offset. `:angular` for corrections to angular
+    coordinates of modeled pole referred to mean ecliptic of date, that is,
     delta-delta-psi and delta-delta-epsilon. `:positional` for corrections to components
     of modeled pole unit vector referred to GCRS axes, that is, dx and dy.
 - `dople1`: Value of celestial pole offset in first coordinate.
@@ -171,8 +186,8 @@ This function differs from the C version, where this returns the corrections ins
 function cel_pole(tjd::Real, type::Symbol, dpole1::Real, dpole2::Real)
     @assert type ∈ Set([:angular, :positional])
     if type == :angular
-        psi_cor = dpole1 * 1e-3
-        eps_cor = dpole2 * 1e-3
+        psi_cor = dpole1 * 1.0e-3
+        eps_cor = dpole2 * 1.0e-3
     elseif type == :positional
         # Components of modeled pole unit vector referred to GCRS axes
         dx = dpole1
@@ -182,10 +197,10 @@ function cel_pole(tjd::Real, type::Symbol, dpole1::Real, dpole2::Real)
         mean_ob = mean_obliq(tjd)
         sin_e = sin(mean_ob * ASEC2RAD)
         # Trivial model of pole trajectory is GCRS allows computation of dz
-        x = (2004.190 * t) * ASEC2RAD
+        x = (2004.19 * t) * ASEC2RAD
         dz = -(x + 0.5 * x * x * x) * dx
         # Form pole offset vector in GCRS
-        dp1 = [dx, dy, dz] .* 1e-3 .* ASEC2RAD
+        dp1 = [dx, dy, dz] .* 1.0e-3 .* ASEC2RAD
         # Precess pole offset vector to mean equator and equinox of date
         dp2 = frame_tie(dp1, :icrs2dynamic)
         dp3 = precession(T0, dp2, tjd)
@@ -215,14 +230,14 @@ Computes quantities related to the orientation of the Earth's rotation axis at J
 - `dpsi`: Nutation in longitude on arcseconds
 - `deps`: Nutation in obliquity in arcseconds
 """
-@memoize function e_tilt(jd_tdb::T; accuracy::Symbol=:full) where {T<:Real}
+@memoize function e_tilt(jd_tdb::T; accuracy::Symbol = :full) where {T <: Real}
     # FIXME how do we include the PSI_COR and EPS_COR
 
     # Compute time in Julian centuries from epoch J2000.0
     t = (jd_tdb - T0) / 36525.0
     # Compute the nutation angles
-    dp, de = nutation_angles(t; accuracy=accuracy)
-    c_terms = ee_ct(jd_tdb, zero(T); accuracy=accuracy) / ASEC2RAD
+    dp, de = nutation_angles(t; accuracy)
+    c_terms = ee_ct(jd_tdb, zero(T); accuracy) / ASEC2RAD
     # Apply observed celestial pole offsets FIXME what do we do here?
     d_psi = dp # + PSI_COR
     d_eps = de # + EPS_COR
@@ -254,22 +269,26 @@ the result is the equation of the origins.
 - `accuracy::Symbol=:full`: Either `:full` or `:reduced` accuracy
 - `equinox::Symbol=:mean`: Either `:mean` or `:true`
 """
-@memoize function ira_equinox(jd_tdb::Real; accuracy::Symbol=:full,
-                              equinox::Union{Symbol,Bool}=:mean)
+@memoize function ira_equinox(
+        jd_tdb::Real; accuracy::Symbol = :full,
+        equinox::Union{Symbol, Bool} = :mean
+    )
     @assert equinox ∈ Set([:mean, :true])
     # Compute time in Julian centuries
     t = (jd_tdb - T0) / 36525.0
     # For the true equinox, obtain the equation of the equinoxes in seconds,
     # which includes the 'complementary terms'
     if equinox == :true
-        _, _, eq_eq, _, _ = e_tilt(jd_tdb; accuracy=accuracy)
+        _, _, eq_eq, _, _ = e_tilt(jd_tdb; accuracy)
     elseif equinox == :mean
         eq_eq = 0.0
     end
     # Compute precession in RA in arcseconds taken from the reference
     prec_ra = 0.014506 +
-              ((((-0.0000000368 * t - 0.000029956) * t - 0.00000044) * t + 1.3915817) * t +
-               4612.156534) * t
+        (
+        (((-0.0000000368 * t - 0.000029956) * t - 0.00000044) * t + 1.3915817) * t +
+            4612.156534
+    ) * t
     ra_eq = -(prec_ra / 15.0 + eq_eq) / 3600.0
     return ra_eq
 end
@@ -286,10 +305,10 @@ right ascension with respect to the true equinox of date.
 # Optional Arguments
 - `accuracy::Symbol=:full`: Either `:full` or `:reduced` accuracy
 """
-@memoize function cio_location(jd_tdb::Real; accuracy::Symbol=:full)
+@memoize function cio_location(jd_tdb::Real; accuracy::Symbol = :full)
     # NOTE: We are going to calculate the values instead of using the external dep for the time being
     # This results in ref_sys always being 2, true equator and equinox instead of interpolated GCRS
-    ra_cio = -ira_equinox(jd_tdb; accuracy=accuracy, equinox=:true)
+    ra_cio = -ira_equinox(jd_tdb; accuracy, equinox = :true)
     return ra_cio
 end
 
@@ -306,17 +325,17 @@ by the celestial intermediate pole and origin.
 # Optional Arguments
 - `accuracy::Symbol=:full`: Either `:full` or `:reduced` accuracy
 """
-@memoize function cio_basis(jd_tdb::Real, ra_cio::Real; accuracy::Symbol=:full)
+@memoize function cio_basis(jd_tdb::Real, ra_cio::Real; accuracy::Symbol = :full)
     # Compute unit vector z towards celestial pole
     z0 = [0.0, 0.0, 1.0]
-    w1 = nutation(jd_tdb, z0; accuracy=accuracy, direction=:true2mean)
+    w1 = nutation(jd_tdb, z0; accuracy, direction = :true2mean)
     w2 = precession(jd_tdb, w1, T0)
     z = frame_tie(w2, :dynamic2icrs)
     # Compute unit vectors x and y
     # First construct unit vector towards CIO in equator and equinox of date system
     w0 = @SVector [cosd(ra_cio * 15), sind(ra_cio * 15), 0]
     # Rotate the vector into the GCRS to form unit vector x
-    w1 = nutation(jd_tdb, w0; accuracy=accuracy, direction=:true2mean)
+    w1 = nutation(jd_tdb, w0; accuracy, direction = :true2mean)
     w2 = precession(jd_tdb, w1, T0)
     x = frame_tie(w2, :dynamic2icrs)
     # Compute unit vector y orthogonal to x and z
@@ -333,8 +352,8 @@ This function returns the value of the earth rotation angle (theta in degrees) f
 - `jd_high::Real`: High-order part of UT1 Julian date
 - `jd_low::Real=0.0`: Low-order part of UT1 Julian date
 """
-function era(jd_high::Real, jd_low::Real=0.0)
-    thet1 = 0.7790572732640 + 0.00273781191135448 * (jd_high - T0)
+function era(jd_high::Real, jd_low::Real = 0.0)
+    thet1 = 0.779057273264 + 0.00273781191135448 * (jd_high - T0)
     thet2 = 0.00273781191135448 * jd_low
     thet3 = rem(jd_high, 1.0) + rem(jd_low, 1.0)
     theta = rem(thet1 + thet2 + thet3, 1.0) * 360.0
@@ -356,12 +375,12 @@ corresponding to a Barrycentric Dynamical Time (TDB) Julian Date)
 function tdb2tt(tdb_jd::Real)
     t = (tdb_jd - T0) / 36525.0
     secdiff = 0.001657 * sin(628.3076 * t + 6.2401) +
-              0.000022 * sin(575.3385 * t + 4.2970) +
-              0.000014 * sin(1256.6152 * t + 6.1969) +
-              0.000005 * sin(606.9777 * t + 4.0212) +
-              0.000005 * sin(52.9691 * t + 0.4444) +
-              0.000002 * sin(21.3299 * t + 5.5431) +
-              0.000010 * t * sin(628.3076 * t + 4.2490)
+        0.000022 * sin(575.3385 * t + 4.297) +
+        0.000014 * sin(1256.6152 * t + 6.1969) +
+        0.000005 * sin(606.9777 * t + 4.0212) +
+        0.000005 * sin(52.9691 * t + 0.4444) +
+        0.000002 * sin(21.3299 * t + 5.5431) +
+        0.00001 * t * sin(628.3076 * t + 4.249)
     tt_jd = tdb_jd - secdiff / 86500.0
     return (tt_jd, secdiff)
 end
@@ -382,9 +401,11 @@ See Chapter 5 in the NOVASC manual for information between equinox and CIO-based
 - `method::Symbol=:CIO`: Computation method, `:CIO`-based or `:equinox`-based
 - `accuracy::Symbol=:full`: Either `:full` or `:reduced` accuracy
 """
-@memoize function sidereal_time(jd_high::Real, jd_low::Real=0.0, delta_t::Real=0.0;
-                                gst_type::Symbol=:mean, method::Symbol=:CIO,
-                                accuracy::Symbol=:full)
+@memoize function sidereal_time(
+        jd_high::Real, jd_low::Real = 0.0, delta_t::Real = 0.0;
+        gst_type::Symbol = :mean, method::Symbol = :CIO,
+        accuracy::Symbol = :full
+    )
     @assert method ∈ Set([:equinox, :CIO])
     @assert gst_type ∈ Set([:mean, :apparent])
 
@@ -402,9 +423,9 @@ See Chapter 5 in the NOVASC manual for information between equinox and CIO-based
 
     # Compute the equation of the equinoxes if needed, depending upon the input values of `gst_type` and `method`.
     # If not needed, set to zero
-    if ((gst_type == :mean) && (method == :CIO)) ||
-       ((gst_type == :apparent) && (method == :equinox))
-        _, _, ee, _, _ = e_tilt(jd_tdb; accuracy=accuracy)
+    if (gst_type == :mean && method == :CIO) ||
+            (gst_type == :apparent && method == :equinox)
+        _, _, ee, _, _ = e_tilt(jd_tdb; accuracy)
         eqeq = ee * 15
     else
         eqeq = 0
@@ -412,10 +433,10 @@ See Chapter 5 in the NOVASC manual for information between equinox and CIO-based
 
     if method == :CIO
         # Obtain basis vectors, in the GCRS of the celestial intermediate system
-        ra_cio = cio_location(jd_tdb; accuracy=accuracy)
-        x, y, z = cio_basis(jd_tdb, ra_cio; accuracy=accuracy)
+        ra_cio = cio_location(jd_tdb; accuracy)
+        x, y, z = cio_basis(jd_tdb, ra_cio; accuracy)
         # Compute the direction of the true equinox in the GCRS
-        w1 = nutation(jd_tdb, [1, 0, 0]; direction=:true2mean, accuracy=accuracy)
+        w1 = nutation(jd_tdb, [1, 0, 0]; direction = :true2mean, accuracy)
         w2 = precession(jd_tdb, w1, T0)
         eq = frame_tie(w2, :dynamic2icrs)
         # Compute the hour angle of the equinox w.r.t. the TIO meridian
@@ -430,9 +451,11 @@ See Chapter 5 in the NOVASC manual for information between equinox and CIO-based
     elseif method == :equinox
         # Precession-in-RA terms in mean sidereal time with coefficients in arcseconds
         st = eqeq +
-             0.014506 +
-             ((((-0.0000000368 * t - 0.000029956) * t - 0.00000044) * t + 1.3915817) * t +
-              4612.156534) * t
+            0.014506 +
+            (
+            (((-0.0000000368 * t - 0.000029956) * t - 0.00000044) * t + 1.3915817) * t +
+                4612.156534
+        ) * t
         gst = rem((st / 3600.0 + theta), 360.0) / 15.0
         if gst < 0.0
             gst += 24.0
@@ -463,8 +486,10 @@ and TIO, respectively.
 # Optional Arguments
 - `direction::Symbol=:itrs2terr`: Either `:itrs2terr` or `:terr2itrs`
 """
-function wobble(tjd::Real, xp::Real, yp::Real, pos::AbstractVector;
-                direction::Symbol=:itrs2terr)
+function wobble(
+        tjd::Real, xp::Real, yp::Real, pos::AbstractVector;
+        direction::Symbol = :itrs2terr
+    )
     @assert direction ∈ Set([:itrs2terr, :terr2itrs])
     xpole = xp * ASEC2RAD
     ypole = yp * ASEC2RAD
@@ -541,9 +566,11 @@ the dynamical-to-GCRS frame tie.
 - `xp::Real=0`: x coordinate of the celestial intermediate pole in arcseconds
 - `yp::Real=0`: y coordinate of the celestial intermediate pole in arcseconds
 """
-function ter2cel(jd_ut_high::Real, jd_ut_low::Real, delta_t::Real, vec::AbstractVector;
-                 method::Symbol=:CIO, accuracy::Symbol=:full, option::Symbol=:GCRS,
-                 xp::Real=0, yp::Real=0)
+function ter2cel(
+        jd_ut_high::Real, jd_ut_low::Real, delta_t::Real, vec::AbstractVector;
+        method::Symbol = :CIO, accuracy::Symbol = :full, option::Symbol = :GCRS,
+        xp::Real = 0, yp::Real = 0
+    )
     @assert method ∈ Set([:CIO, :equinox])
     @assert option ∈ Set([:GCRS, :equinox])
     # Compute the TT Julian date
@@ -557,26 +584,28 @@ function ter2cel(jd_ut_high::Real, jd_ut_low::Real, delta_t::Real, vec::Abstract
     if iszero(xp) && iszero(yp)
         v1 = vec
     else
-        v1 = wobble(jd_tdb, xp, yp, vec; direction=:itrs2terr)
+        v1 = wobble(jd_tdb, xp, yp, vec; direction = :itrs2terr)
     end
     if method == :CIO
         # Obtain basis vectors, in the GCRS of the celestial intermediate system
-        r_cio = cio_location(jd_tdb; accuracy=accuracy)
-        x, y, z = cio_basis(jd_tdb, r_cio; accuracy=accuracy)
+        r_cio = cio_location(jd_tdb; accuracy)
+        x, y, z = cio_basis(jd_tdb, r_cio; accuracy)
         # Compute and apply earth rotation angle, `theta` transforming the vector to the celestial intermediate system
         θ = era(jd_ut_high, jd_ut_low)
         v2 = spin(-θ, v1)
         # Transform the vector from the celestial intermediate system to the GCRS
         vec2 = hcat(x, y, z) * v2
     elseif method == :equinox
-        gast = sidereal_time(jd_ut_high, jd_ut_low, delta_t; gst_type=:apparent,
-                             method=:equinox, accuracy=accuracy)
+        gast = sidereal_time(
+            jd_ut_high, jd_ut_low, delta_t; gst_type = :apparent,
+            method = :equinox, accuracy
+        )
         v2 = spin(-gast * 15, v1)
         if option == :equinox
             vec2 = v2
         elseif option == :GCRS
             # Apply precession, nutation, frame tie
-            v3 = nutation(jd_tdb, v2; accuracy=accuracy, direction=:true2mean)
+            v3 = nutation(jd_tdb, v2; accuracy, direction = :true2mean)
             v4 = precession(jd_tdb, v3, T0)
             vec2 = frame_tie(v4, :dynamic2icrs)
         end
@@ -587,7 +616,7 @@ end
 """
     OneSurface(lat,lon,h,temp,p)
 
-Structure holding the observer's location on the surface of the Earth. 
+Structure holding the observer's location on the surface of the Earth.
 Atmospheric parameters are optional and are only used by `equ2hor` in the
 calculation of refraction.
 
@@ -598,7 +627,7 @@ calculation of refraction.
 - `temperature::Real=0`: Temperature (degrees Celsius)
 - `pressure::Real=0`: Atmospheric pressure (millibars)
 """
-struct OnSurface{T<:Real}
+struct OnSurface{T <: Real}
     latitude::T
     longitude::T
     height::T
@@ -606,7 +635,7 @@ struct OnSurface{T<:Real}
     pressure::T
 end
 
-OnSurface(lat::T, lon::T, h::T) where {T<:Real} = OnSurface(lat, lon, h, zero(T), zero(T))
+OnSurface(lat::T, lon::T, h::T) where {T <: Real} = OnSurface(lat, lon, h, zero(T), zero(T))
 
 """
     refract(location,zd_obs)
@@ -619,9 +648,10 @@ This is approximate for optical wavelengths.
 - `zd_obs::Real`: Observed zenith distance, in degrees
 
 # Optional Arguments
-- `ref_option::Symbol=:standard`: Either `:standard` to use standard atmospheric conditions, or `:location` to use the conditions included in `location`.
+- `ref_option::Symbol=:standard`: Either `:standard` to use standard atmospheric
+  conditions, or `:location` to use the conditions included in `location`.
 """
-function refract(location::OnSurface, zd_obs::Real; ref_option::Symbol=:standard)
+function refract(location::OnSurface, zd_obs::Real; ref_option::Symbol = :standard)
     @assert ref_option ∈ Set([:standard, :location])
     # We only care about zenith distances between 0.1 and 91 degrees
     if 0.1 <= zd_obs <= 91
@@ -674,9 +704,11 @@ included in `location`.
 - `rar`: Topocentric RA of object of interest in hours
 - `decr`: Topocentric declination of object of interest in degrees
 """
-function equ2hor(jd_ut1::Real, delta_t::Real, ra::Real, dec::Real, location::OnSurface;
-                 accuracy::Symbol=:full, xp::Real=0.0, yp::Real=0.0,
-                 ref_option::Symbol=:none)
+function equ2hor(
+        jd_ut1::Real, delta_t::Real, ra::Real, dec::Real, location::OnSurface;
+        accuracy::Symbol = :full, xp::Real = 0.0, yp::Real = 0.0,
+        ref_option::Symbol = :none
+    )
     @assert ref_option ∈ Set([:none, :standard, :location])
     # Initialize things
     refr = 0.0
@@ -694,12 +726,18 @@ function equ2hor(jd_ut1::Real, delta_t::Real, ra::Real, dec::Real, location::OnS
     # Define vector towards local west in Earth-fixed system
     uwe = @SVector [sinlon, -coslon, 0.0]
     # Obtain vectors in celestial system and rotate earth-fixed orthonormal basis to celestial system
-    uz = ter2cel(jd_ut1, 0.0, delta_t, uze; accuracy=accuracy, xp=xp, yp=yp,
-                 option=:equinox, method=:equinox)
-    un = ter2cel(jd_ut1, 0.0, delta_t, une; accuracy=accuracy, xp=xp, yp=yp,
-                 option=:equinox, method=:equinox)
-    uw = ter2cel(jd_ut1, 0.0, delta_t, uwe; accuracy=accuracy, xp=xp, yp=yp,
-                 option=:equinox, method=:equinox)
+    uz = ter2cel(
+        jd_ut1, 0.0, delta_t, uze; accuracy, xp, yp,
+        option = :equinox, method = :equinox
+    )
+    un = ter2cel(
+        jd_ut1, 0.0, delta_t, une; accuracy, xp, yp,
+        option = :equinox, method = :equinox
+    )
+    uw = ter2cel(
+        jd_ut1, 0.0, delta_t, uwe; accuracy, xp, yp,
+        option = :equinox, method = :equinox
+    )
     # Define unit vector `p` towards object in celestial system w.r.t equator and equinox of date
     p = [cosdc * cosra, cosdc * sinra, sindc]
     # Compute coordinates of object w.r.t orthonomral basis
@@ -726,7 +764,7 @@ function equ2hor(jd_ut1::Real, delta_t::Real, ra::Real, dec::Real, location::OnS
         zd0 = zd
         while true
             zd1 = zd
-            refr = refract(location, zd; ref_option=ref_option)
+            refr = refract(location, zd; ref_option = ref_option)
             zd = zd0 - refr
             abs(zd - zd1) > 3.0e-5 || break
         end
@@ -775,7 +813,8 @@ function show(io::IO, entry::CatEntry)
     println(io, "Proper motion in RA:   ", entry.promora, " mas/yr")
     println(io, "Proper motion in dec:  ", entry.promodec, " mas/yr")
     println(io, "Parallax:              ", entry.parallax, " mas")
-    return println(io, "Radial Velocity:       ", entry.radialvelocity, " km/s")
+    println(io, "Radial Velocity:       ", entry.radialvelocity, " km/s")
+    return
 end
 
 """
@@ -794,9 +833,11 @@ struct Object
     type::Symbol
     number::Int
     name::String
-    star::Union{Nothing,CatEntry}
-    function Object(type::Symbol, number::Int, name::String,
-                    star::Union{Nothing,CatEntry}=nothing)
+    star::Union{Nothing, CatEntry}
+    function Object(
+            type::Symbol, number::Int, name::String,
+            star::Union{Nothing, CatEntry} = nothing
+        )
         @assert type ∈ Set([:major, :minor, :extrasolar])
         @assert !((type == :extrasolar) && isnothing(star)) "Extrasolar sources must have star data"
         @assert !((type == :extrasolar) && !iszero(number)) "Extrasolar number should be zero"
@@ -808,9 +849,11 @@ end
 Object(type::Symbol, star::CatEntry) = Object(type, 0, star.starname, star)
 
 function show(io::IO, obj::Object)
-    println(io, "Type:          ",
-            Dict(:major => "Major Planet", :minor => "Minor Planet",
-                 :extrasolar => "Extrasolar")[obj.type])
+    type = Dict(
+        :major => "Major Planet", :minor => "Minor Planet",
+        :extrasolar => "Extrasolar"
+    )[obj.type]
+    println(io, "Type:          ", type)
     if !iszero(obj.number)
         println(io, "Number:        ", obj.number)
     end
@@ -818,6 +861,7 @@ function show(io::IO, obj::Object)
     if !isnothing(obj.star)
         println(io, "Catalog Entry: ", obj.star.catalog, " ", obj.star.starnumber)
     end
+    return
 end
 
 """
@@ -852,7 +896,7 @@ end
 
 """
 The location of an observer.
-Note, this is quite different from the C version as we will 
+Note, this is quite different from the C version as we will
 use the union type to store the location instead of two potentially
 nil pointers. As such the names of the arguments differ and is incompatible with C.
 
@@ -863,8 +907,8 @@ In space implies on a near-earth spacecraft.
 """
 struct Observer
     type::Symbol
-    loc::Union{OnSurface,InSpace,Nothing}
-    function Observer(type::Symbol, loc::Union{OnSurface,InSpace,Nothing}=nothing)
+    loc::Union{OnSurface, InSpace, Nothing}
+    function Observer(type::Symbol, loc::Union{OnSurface, InSpace, Nothing} = nothing)
         @assert type ∈ Set([:geocenter, :surface, :space])
         if type == :geocenter
             @assert isnothing(loc) "loc must be empty for geocentric observers"
@@ -885,6 +929,7 @@ function show(io::IO, obs::Observer)
     elseif obs.type == :space
         prinlnt(io, "An observer in a near-Earth spacecraft")
     end
+    return
 end
 
 """
@@ -900,8 +945,10 @@ Retrieves the position and velocity of a solar system body from a fundamental ep
 - `origin::Symbol`: Either the solar system `:barycenter` or the center of mass of the `:sun`
 - `accuracy::Symbol=:full`: Either `:full` or `:reduced` accuracy
 """
-function ephemersis(jd::AbstractVector, cel_obj::Object; origin::Symbol=:barycenter,
-                    accuracy::Symbol=:full)
+function ephemersis(
+        jd::AbstractVector, cel_obj::Object; origin::Symbol = :barycenter,
+        accuracy::Symbol = :full
+    )
     @assert origin ∈ Set([:barycenter, :sun])
     @assert accuracy ∈ Set([:full, :reduced])
     # Acess the ephemeris of the correct type
@@ -910,15 +957,16 @@ function ephemersis(jd::AbstractVector, cel_obj::Object; origin::Symbol=:barycen
         # When high accuracy is specified, use function 'solarsystem_hp' rather
         # than 'solarsystem'
         if accuracy == :full
-            pos, vel = solarsystem_hp(jd, cel_obj.number; origin=origin)
+            pos, vel = solarsystem_hp(jd, cel_obj.number; origin)
         elseif accuracy == :reduced
-            pos, vel = solarsystem(sum(jd), cel_obj.number; origin=origin)
+            pos, vel = solarsystem(sum(jd), cel_obj.number; origin)
         end
     elseif cel_obj.type == :minor
         # Get the position and velocity of a minor planet
     elseif cel_obj.type == :extrasolar
         @error "Ephemersis only valid for major and minor planets"
     end
+    return
 end
 
 """
@@ -937,8 +985,10 @@ Computes the apparent direction of a star or solar system body at a specified ti
 Either `:GCRS`, `:true` equator and equinox, true equator and `:CIO` of date, or `:astrometric` coordinates.
 - `accuracy::Symbol=:full`: Either `:full` or `:reduced` accuracy
 """
-function place(jd_tt::Real, cel_object::Object, location::Observer, delta_t::Real;
-               coord_sys::Symbol=:GCRS, accuracy::Symbol=:full)
+function place(
+        jd_tt::Real, cel_object::Object, location::Observer, delta_t::Real;
+        coord_sys::Symbol = :GCRS, accuracy::Symbol = :full
+    )
     #FIXME
     @assert coord_sys ∈ Set([:GCRS, :true, :CIO, :astrometric])
     # Create Eath and Sun `objects`
@@ -976,14 +1026,16 @@ mean place, proper motion, parallax, and radial velocity.
 - `ra`: Apparent right ascension in hours
 - `dec`: Apparent declination in degrees
 """
-function app_star(jd_tt::Real, star::CatEntry; accuracy::Symbol=:full)
+function app_star(jd_tt::Real, star::CatEntry; accuracy::Symbol = :full)
     #FIXME NOTEST
     # Set up a structure of type `Object` containing the star data
     # Located outside solar system
     cel_obj = Object(:extrasolar, star)
     # Compute the apparent place with a call to function `place`
-    sky_pos = place(jd_tt, cel_obj, Observer(:geocentric), 0.0; coord_sys=:true,
-                    accuracy=accuracy)
+    sky_pos = place(
+        jd_tt, cel_obj, Observer(:geocentric), 0.0; coord_sys = :true,
+        accuracy
+    )
     # Return ra and dec
     return (sky_pos.ra, sky_pos.dec)
 end

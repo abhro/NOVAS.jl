@@ -10,8 +10,10 @@ import Base.isapprox
 Base.isapprox(x::Tuple, y::Tuple; kws...) = isapprox(collect(x), collect(y); kws...)
 
 # Setup record of benchmark results
-results = DataFrame(; fname=String[], c_time=Float64[], julia_time=Float64[],
-                    speedup=Float64[])
+results = DataFrame(;
+    fname = String[], c_time = Float64[], julia_time = Float64[],
+    speedup = Float64[]
+)
 
 # Benchmark using curried f from RPT
 function quickbench(f::Function, types)
@@ -52,8 +54,10 @@ macro testbench(args...)
     c_fexpr = esc(Expr(:(->), nametuple, expr))
     j_fexpr = esc(Expr(:(->), nametuple, NOVAS_expr))
     return quote
-        test_result = RandomizedPropertyTest.do_quickcheck($test_fexpr, $exprstr, $namestrs,
-                                                           $typetuple, $nexpr)
+        test_result = RandomizedPropertyTest.do_quickcheck(
+            $test_fexpr, $exprstr, $namestrs,
+            $typetuple, $nexpr
+        )
         if test_result && !haskey(ENV, "JULIA_DONT_BENCH")
             ctime = quickbench($c_fexpr, $typetuple)
             jtime = quickbench($j_fexpr, $typetuple)

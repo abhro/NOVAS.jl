@@ -1,15 +1,22 @@
 using NOVAS
 using Documenter
 
-DocMeta.setdocmeta!(NOVAS, :DocTestSetup, :(using NOVAS); recursive=true)
+DocMeta.setdocmeta!(NOVAS, :DocTestSetup, :(using NOVAS); recursive = true)
 
-makedocs(; modules=[NOVAS], authors="Kiran Shila <me@kiranshila.com> and contributors",
-         repo="https://github.com/kiranshila/NOVAS.jl/blob/{commit}{path}#{line}",
-         sitename="NOVAS.jl",
-         format=Documenter.HTML(; prettyurls=get(ENV, "CI", "false") == "true",
-                                canonical="https://kiranshila.github.io/NOVAS.jl",
-                                assets=[asset("https://cdn.plot.ly/plotly-2.6.3.min.js")]),
-         pages=["Home" => "index.md", "Examples" => "examples.md",
-                "Benchmarks" => "benchmarks.md", "API" => "api.md"])
+makedocs(;
+    modules = [NOVAS],
+    authors = "Kiran Shila <me@kiranshila.com> and contributors",
+    repo = "https://github.com/kiranshila/NOVAS.jl/blob/{commit}{path}#{line}",
+    sitename = "NOVAS.jl",
+    format = Documenter.HTML(;
+        prettyurls = get(ENV, "CI", "false") == "true",
+        canonical = "https://kiranshila.github.io/NOVAS.jl",
+        assets = [asset("https://cdn.plot.ly/plotly-2.6.3.min.js")]
+    ),
+    pages = [
+        "Home" => "index.md", "Examples" => "examples.md",
+        "Benchmarks" => "benchmarks.md", "API" => "api.md",
+    ]
+)
 
-deploydocs(; repo="github.com/kiranshila/NOVAS.jl", devbranch="main")
+deploydocs(; repo = "github.com/kiranshila/NOVAS.jl", devbranch = "main")

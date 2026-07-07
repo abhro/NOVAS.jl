@@ -20,8 +20,10 @@ Provides an interface between the JPL direct-access solar system ephemerides and
 - `pos`: Position vector of `body` at `tjd` in AU
 - `vel`: Velocity vector of `body` at `tdj` in AU/day
 """
-function solarsystem(tjd::Real, body::Int; origin::Symbol=:barycenter)
+function solarsystem(tjd::Real, body::Int; origin::Symbol = :barycenter)
     # Perform sanity checks
     @assert 1 <= body <= 11 "Illegal body id"
     @assert origin ∈ Set([:barycenter, :sun, :earth])
+
+    return
 end
