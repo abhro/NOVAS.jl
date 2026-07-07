@@ -1,0 +1,19 @@
+# https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference
+version: 2
+
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/" # Location of package manifests
+    schedule:
+      interval: "monthly"
+    cooldown:
+      default-days: 15
+  - package-ecosystem: "julia"
+    directories: ["/", "/docs", "/test"] # Location of Julia projects
+    schedule:
+      interval: "weekly"
+    ignore:
+      - dependency-name: "NOVAS" # Ignore package itself
+    groups:
+      per-dependency:
+        group-by: dependency-name
